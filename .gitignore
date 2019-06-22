@@ -1,0 +1,4 @@
+*.pyc
+.idea/*.*
+Query2Excel/Query2Excel.exe.spec
+Query2Excel/build/*.*

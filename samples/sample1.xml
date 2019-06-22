@@ -1,0 +1,12 @@
+<queries filepath="D:\Target\ExcelDir" filename="Excel_No_Extension" appenddate="yes" connection="SERVER=yourserver\sql2008r2;DRIVER={SQL Server};DATABASE=yourdb;UID=sa;PWD=somepwd">
+	<query name="Inventory">
+		<sql file="D:\location\of\the\file\having\query.sql" />
+	</query>
+	<query name="Customers">
+		<sql>select top 100 * from you_can_write_query_here_also</sql>
+	</query>
+	<query name="somexyz1" connection="SERVER=yourserver;DRIVER={SQL Server};DATABASE=another_db_if_diff;UID=sa;PWD=yourpwd">
+		<sql>select top 100 * from anything</sql>
+	</query>
+</queries>
+
