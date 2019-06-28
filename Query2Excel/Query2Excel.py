@@ -1,14 +1,24 @@
-import xml.etree.ElementTree as ET
-import pyodbc
-import openpyxl
+import os
 import datetime
 import argparse
-import os
+import xml.etree.ElementTree as ET
+import openpyxl
+import pyodbc
 
-def generate_excel(sheet_name, cnn_str, query, wb):
+
+def generate_excel(sheet_name, cnn_str, query, work_book):
+    """
+    Generates the Excel sheet for the sheet passed.
+    :param sheet_name:
+    :param cnn_str:
+    :param query:
+    :param work_book:
+    :return:
+    """
+
     print(f'Preparing the sheet {sheet_name}')
 
-    ws = wb.create_sheet(title=sheet_name)
+    sheet = work_book.create_sheet(title=sheet_name)
 
     cnn = pyodbc.connect(cnn_str)
     cur = cnn.cursor()
@@ -22,7 +32,7 @@ def generate_excel(sheet_name, cnn_str, query, wb):
 
     # Add Header
     for i in range(len(rows[0].cursor_description)):
-        cell = ws.cell(row=row_no, column=i + 1)
+        cell = sheet.cell(row=row_no, column=i + 1)
         # First item in cursor_description is the field name
         cell.value = rows[0].cursor_description[i][0]
 
@@ -32,11 +42,9 @@ def generate_excel(sheet_name, cnn_str, query, wb):
 
     row_no += 1
 
-    for i in range(len(rows)):
-        row = rows[i]
-
+    for row in rows:
         for j in range(len(row)):
-            cell = ws.cell(row=row_no, column=j + 1)
+            cell = sheet.cell(row=row_no, column=j + 1)
             cell.value = row[j]
             if isinstance(row[j], datetime.datetime):
                 cell.number_format = 'dd-MMM-yy'
@@ -45,16 +53,14 @@ def generate_excel(sheet_name, cnn_str, query, wb):
         row_no += 1
 
 
-def main_xml():
-    aparser = argparse.ArgumentParser(
-        description='Mitesh: Query 2 Excel.  Give a XML file with query and have output in Excel .',
-        epilog='You are seeing EPILOG'
-    )
-    aparser.add_argument('xml', type=str, help='xml file having queries, connections, etc...')
-    args = aparser.parse_args()
-    file_path_xml = args.xml
+def process_xml(xml_file_path):
+    """
+    Opens the XML file and generates Excel Worksheets in Excel workbook for each query nodes.
+    :param xml_file_path: XML file to be read to generate the Excel workbook.
+    :return: None
+    """
 
-    tree = ET.parse(file_path_xml)
+    tree = ET.parse(xml_file_path)
     root = tree.getroot()
 
     # Connection string given in queries root node
@@ -63,14 +69,14 @@ def main_xml():
         global_cnn_str = root.attrib['connection']
 
 
-    output_excel = os.path.join(root.attrib['filepath'], root.attrib['filename'])
+    excel_file_path = os.path.join(root.attrib['filepath'], root.attrib['filename'])
     if 'appenddate' in root.attrib:
         if root.attrib['appenddate'] == 'yes':
             today = datetime.date.today()
-            output_excel = f"{output_excel}_{today.strftime('%d-%b-%Y')}"
-    output_excel = output_excel + '.xlsx'
+            excel_file_path = f"{excel_file_path}_{today.strftime('%d-%b-%Y')}"
+    excel_file_path = excel_file_path + '.xlsx'
 
-    wb = openpyxl.Workbook()
+    work_book = openpyxl.Workbook()
     for query in root:
         sheet_name = query.attrib['name']
 
@@ -89,11 +95,27 @@ def main_xml():
         else:
             sql_text = sql.text
 
-        generate_excel(sheet_name, cnn_str, sql_text, wb)
+        generate_excel(sheet_name, cnn_str, sql_text, work_book)
 
-    wb.save(output_excel)
-    print(f'File {output_excel} created successfully.')
+    work_book.save(excel_file_path)
+    print(f'File {excel_file_path} created successfully.')
+
+
+def main():
+    """
+    The main function when this module is called..
+    :return: None
+    """
+
+    aparser = argparse.ArgumentParser(
+        description='Mitesh: Query 2 Excel.  Give a XML file with query and have output in Excel .',
+        epilog='You are seeing EPILOG'
+    )
+    aparser.add_argument('xml', type=str, help='xml file having queries, connections, etc...')
+    args = aparser.parse_args()
+    xml_file_path = args.xml
+    process_xml(xml_file_path)
+
 
 if __name__ == '__main__':
-    #main_json()
-    main_xml()
+    main()
